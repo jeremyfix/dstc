@@ -24,3 +24,8 @@ You can view :
 - tracker output files
 
 All these files must fit the DSTC JSON format.
+
+Screenshots
+-----------
+
+![Viewer](./Pics/screenshot.png "The viewers of DSTC files")
