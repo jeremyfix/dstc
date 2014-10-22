@@ -6,22 +6,25 @@
 #include <exception>
 
 std::string dialog_act_to_string(Json::Value& value) {
-    std::string value_str = "";
+    std::ostringstream ostr;
+    ostr.str("");
     for(unsigned int i = 0 ; i < value.size() ; ++i) {
-        value_str += value[i]["act"].asString() + "(";
+      ostr << value[i]["act"].asString() << "(";
         Json::Value value_slots = value[i]["slots"];
         for(unsigned int j = 0 ; j < value_slots.size(); ++j) {
             Json::Value value_slot = value_slots[j];
             if(value_slot.size() == 2) {
-                value_str += value_slot[0].asString() + " = " + value_slot[1].asString() + (j == value_slots.size() - 1 ? "" : ",");
+	      if(value_slot[0].asString() == std::string("count")) 
+		ostr << value_slot[0].asString() << " = " << value_slot[1].asInt() << (j == value_slots.size() - 1 ? "" : ",");
+	      else 
+		ostr << value_slot[0].asString() << " = " << value_slot[1].asString() << (j == value_slots.size() - 1 ? "" : ",");
             }
-            else {
-                std::cerr << value[i]["act"].asString() << " " << value_slot.size() << std::endl;
-            }
+            else 
+	      std::cerr << value[i]["act"].asString() << " " << value_slot.size() << std::endl;
         }
-        value_str += ")";
+	ostr << ")";
     }
-    return value_str;
+    return ostr.str();
 }
 
 Ontology parse_ontology_json_file(std::string filename) {
@@ -104,7 +107,6 @@ Dialog parse_dialog_json_file(std::string filename) {
             Json::Value sluhyps = turn_input_live["slu-hyps"];
 
             DialogTurn dturn;
-
             // Process the asr-hyps
             for(unsigned int j = 0 ; j < asrhyps.size() ; ++j) {
                 dturn.asr_hyps.push_back(asrhyps[j]["asr-hyp"].asString());
