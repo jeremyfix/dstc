@@ -23,7 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     tracker_output_viewer.show();
 
     // Action menu for opening the files
-    connect(this->ui->actionOpen_ontology, SIGNAL(triggered()), this, SLOT(openOontology()));
+    connect(this->ui->actionOpen_ontology, SIGNAL(triggered()), this, SLOT(openOntology()));
     connect(this->ui->actionOpen_dialogs, SIGNAL(triggered()), this, SLOT(openDialogs()));
     connect(this->ui->actionOpen_tracker_output, SIGNAL(triggered()), this, SLOT(openTrackerOutput()));
 
@@ -51,21 +51,25 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-void MainWindow::closeEvent(QCloseEvent *event) {
+void MainWindow::closeEvent(QCloseEvent *) {
     ontology_viewer.close();
     label_viewer.close();
     tracker_output_viewer.close();
 }
 
-void MainWindow::openOontology() {
+void MainWindow::openOntology() {
     QString filename = QFileDialog::getOpenFileName(this,
-                                                    tr("Open ontology file"), "~", tr("JSON Files (*.json)"));
+                                                    tr("Open ontology file"), 
+						    "~", 
+						    tr("JSON Files (*.json)"));
     ontology_viewer.loadData(filename.toStdString());
 }
 
 void MainWindow::openDialogs() {
     QString filename = QFileDialog::getOpenFileName(this,
-                                                    tr("Open dialogs list file"), "~", tr("Dialog list files (*.flist)"));
+                                                    tr("Open dialogs list file"), 
+						    "~", 
+						    tr("Dialog list files (*.flist)"));
 
     // We open and parse the file
     // we save the data in a map with :
@@ -141,27 +145,20 @@ void MainWindow::changeDialog(QString value) {
 
             // Display the asr hypothesis
             QTreeWidgetItem* asrhyp_item = new QTreeWidgetItem(top_level_items.last(), QStringList(QString("asr-hyps")));
-
-            std::list<std::string>::iterator it_asrhyp = current_turn.asr_hyps.begin();
-            std::list<double>::iterator it_asrhyp_scores = current_turn.asr_hyps_scores.begin();
-            //std::cout << " I have " << current_turn.asr_hyps.size() << " asr hyps!" << std::endl;
-            for(unsigned int j = 0 ; j < current_turn.asr_hyps.size() ; ++j, ++it_asrhyp, ++it_asrhyp_scores) {
-                QStringList column_values;
-                column_values.push_back(QString::fromStdString(*it_asrhyp));
-                column_values.push_back(QString("%1").arg(*it_asrhyp_scores));
-                low_level_items.push_back(new QTreeWidgetItem(asrhyp_item, column_values));
+	    for(auto& asr_hyp: current_turn.asr_hyps) {
+	      QStringList column_values;
+	      column_values.push_back(QString::fromStdString(asr_hyp.first));
+	      column_values.push_back(QString("%1").arg(asr_hyp.second));
+	      low_level_items.push_back(new QTreeWidgetItem(asrhyp_item, column_values));
             }
 
             // Display the slu hypothesis
             QTreeWidgetItem* sluhyp_item = new QTreeWidgetItem(top_level_items.last(), QStringList(QString("slu-hyps")));
 
-            std::list<std::string>::iterator it_sluhyp = current_turn.slu_hyps.begin();
-            std::list<double>::iterator it_sluhyp_scores = current_turn.slu_hyps_scores.begin();
-            //std::cout << " I have " << current_turn.slu_hyps.size() << " slu hyps!" << std::endl;
-            for(unsigned int j = 0 ; j < current_turn.slu_hyps.size() ; ++j, ++it_sluhyp, ++it_sluhyp_scores) {
+	    for(auto& slu_hyp: current_turn.slu_hyps) {
                 QStringList column_values;
-                column_values.push_back(QString::fromStdString(*it_sluhyp));
-                column_values.push_back(QString("%1").arg(*it_sluhyp_scores));
+                column_values.push_back(QString::fromStdString(slu_hyp.first));
+                column_values.push_back(QString("%1").arg(slu_hyp.second));
                 low_level_items.push_back(new QTreeWidgetItem(sluhyp_item, column_values));
             }
 

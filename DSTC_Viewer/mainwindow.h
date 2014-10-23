@@ -33,7 +33,7 @@ private:
     DialogLabels current_labels;
 
 public slots:
-    void openOontology();
+    void openOntology();
     void openDialogs();
     void openTrackerOutput();
 

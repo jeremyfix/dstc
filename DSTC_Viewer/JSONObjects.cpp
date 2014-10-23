@@ -109,16 +109,16 @@ Dialog parse_dialog_json_file(std::string filename) {
             DialogTurn dturn;
             // Process the asr-hyps
             for(unsigned int j = 0 ; j < asrhyps.size() ; ++j) {
-                dturn.asr_hyps.push_back(asrhyps[j]["asr-hyp"].asString());
                 setlocale(LC_NUMERIC, "C"); // this allows to correctly parse, for example, 1.2 instead of 1,2 which is rendered as 1
-                dturn.asr_hyps_scores.push_back(asrhyps[j]["score"].asDouble());
+                dturn.asr_hyps.push_back(std::make_pair(asrhyps[j]["asr-hyp"].asString(),
+							asrhyps[j]["score"].asDouble()));
             }
 
             // Process the slu-hyps
             for(unsigned int j = 0 ; j < sluhyps.size() ; ++j) {
-                dturn.slu_hyps.push_back(dialog_act_to_string(sluhyps[j]["slu-hyp"]));
                 setlocale(LC_NUMERIC, "C"); // this allows to correctly parse, for example, 1.2 instead of 1,2 which is rendered as 1
-                dturn.slu_hyps_scores.push_back(sluhyps[j]["score"].asDouble());
+		dturn.slu_hyps.push_back(std::make_pair(dialog_act_to_string(sluhyps[j]["slu-hyp"]),
+							sluhyps[j]["score"].asDouble()));			
             }
 
             // Process the output of the system (transcripts and dialog_act)
@@ -167,24 +167,31 @@ DialogLabels parse_label_json_file(std::string filename) {
             label_turn.transcription = turn["transcription"].asString();
             label_turn.semantics = turn["semantics"]["cam"].asString();
 
-            label_turn.goal_labels = "";
+            label_turn.goal_labels_str = "";
             Json::Value::Members turn_goal_labels_members = turn_goal_labels.getMemberNames();
-            for(auto& m: turn_goal_labels_members)
-                label_turn.goal_labels += m + " = " + turn_goal_labels[m].asString() + ",";
-            if(label_turn.goal_labels.size() != 0)
-                label_turn.goal_labels = label_turn.goal_labels.substr(0, label_turn.goal_labels.size() - 1);
+            for(auto& m: turn_goal_labels_members) {
+                label_turn.goal_labels_str += m + " = " + turn_goal_labels[m].asString() + ",";
+		label_turn.goal_labels.push_back(std::make_pair(m, turn_goal_labels[m].asString()));
+	    }
+            if(label_turn.goal_labels_str.size() != 0)
+                label_turn.goal_labels_str = label_turn.goal_labels_str.substr(0, label_turn.goal_labels_str.size() - 1);
 
             // Method label : the true method
             label_turn.method_label = turn["method-label"].asString();
 
             // Requested slots : the true slots requested by the user, as a list
-            label_turn.requested_slots = std::string("");
+            label_turn.requested_slots_str = std::string("");
             if(turn_requested_slots.size() != 0) {
-                for(unsigned int j = 0 ; j < turn_requested_slots.size() - 1 ; ++j)
-                    label_turn.requested_slots += turn_requested_slots[j].asString() + ",";
-                label_turn.requested_slots += turn_requested_slots[turn_requested_slots.size() - 1].asString();
+	      for(unsigned int j = 0 ; j < turn_requested_slots.size() - 1 ; ++j) {
+		std::string tmp =  turn_requested_slots[j].asString();
+		label_turn.requested_slots_str += tmp + ",";
+		label_turn.requested_slots.push_back(tmp);
+	      }
+	      std::string tmp = turn_requested_slots[turn_requested_slots.size() - 1].asString();
+	      label_turn.requested_slots_str += tmp;
+	      label_turn.requested_slots.push_back(tmp);
             }
-
+	    
             dialog_labels.turns.push_back(label_turn);
 
         }

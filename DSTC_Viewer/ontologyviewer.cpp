@@ -25,10 +25,10 @@ OntologyViewer::~OntologyViewer() {
 }
 
 void OntologyViewer::loadData(std::string filename) {
-    ontology = parse_ontology_json_file(filename);
-
-   updateTreeView();
-   updateInformableTreeView();
+  ontology = parse_ontology_json_file(filename);
+  
+  updateTreeView();
+  updateInformableTreeView();
 }
 
 

@@ -46,9 +46,9 @@ void LabelViewer::updateView() {
         QTreeWidgetItem* current_item =  top_level_items.last();
         low_level_items.push_back(new QTreeWidgetItem(current_item, QStringList(QString::fromStdString(std::string("Transcription: ") + current_turn.transcription))));
         low_level_items.push_back(new QTreeWidgetItem(current_item, QStringList(QString::fromStdString(std::string("Semantics: ") + current_turn.semantics))));
-        low_level_items.push_back(new QTreeWidgetItem(current_item, QStringList(QString::fromStdString(std::string("Goal labels: ") + current_turn.goal_labels))));
+        low_level_items.push_back(new QTreeWidgetItem(current_item, QStringList(QString::fromStdString(std::string("Goal labels: ") + current_turn.goal_labels_str))));
         low_level_items.push_back(new QTreeWidgetItem(current_item, QStringList(QString::fromStdString(std::string("Method label: ") + current_turn.method_label))));
-        low_level_items.push_back(new QTreeWidgetItem(current_item, QStringList(QString::fromStdString(std::string("Requested slots: ") + current_turn.requested_slots))));
+        low_level_items.push_back(new QTreeWidgetItem(current_item, QStringList(QString::fromStdString(std::string("Requested slots: ") + current_turn.requested_slots_str))));
     }
 
     this->ui->label_turns_tree_view->clear();
