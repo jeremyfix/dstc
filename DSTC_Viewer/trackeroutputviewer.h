@@ -1,3 +1,28 @@
+/*
+  This file is part of dstc-viewer.
+
+  Copyright (C) 2014, Jeremy Fix, Supelec
+
+  Author : Jeremy Fix
+
+  dstc-viewer is free software: you can redistribute it and/or modify
+  it under the terms of the GNU Lesser General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  any later version.
+
+  Foobar is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License
+  along with dstc-viewer.  If not, see <http://www.gnu.org/licenses/>.
+
+  Contact : Jeremy.Fix@supelec.fr
+*/
+
+
+
 #ifndef TRACKEROUTPUTVIEWER_H
 #define TRACKEROUTPUTVIEWER_H
 
@@ -6,23 +31,23 @@
 #include "JSONObjects.h"
 
 namespace Ui {
-class TrackerOutputViewer;
+  class TrackerOutputViewer;
 }
 
 class TrackerOutputViewer : public QWidget
 {
-    Q_OBJECT
+  Q_OBJECT
     
-public:
-    explicit TrackerOutputViewer(QWidget *parent = 0);
-    ~TrackerOutputViewer();
+ public:
+  explicit TrackerOutputViewer(QWidget *parent = 0);
+  ~TrackerOutputViewer();
 
-    void loadData(std::string filename);
+  void loadData(std::string filename);
     
-signals:
-    void sig_sync_to_dialog(bool);
+ signals:
+  void sig_sync_to_dialog(bool);
 
-public slots:
+  public slots:
     void new_dialog(QString);
     void sync_to_dialog(bool);
 
@@ -34,7 +59,7 @@ public slots:
     void prev_output();
     void next_output();
 
-private:
+ private:
     Ui::TrackerOutputViewer *ui;
     TrackerOutput tracker_output;
 
