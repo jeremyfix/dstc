@@ -91,8 +91,10 @@ void MainWindow::openDialogs() {
     infile >> line;
     while(!infile.eof()){
         infile >> line;
-        diag_filename = std::string(basename((char*)line.c_str()));
-        diag_fullpath = std::string(dirname((char*)filename.toStdString().c_str())) + std::string("/../../data/") + line ;
+	// basename and dirname can modify the content of their buffer !!
+	// so we strdup the char* buffer before calling them
+        diag_filename = std::string(basename(strdup(line.c_str())));
+        diag_fullpath = std::string(dirname(strdup(filename.toStdString().c_str()))) + std::string("/../../data/") + line ;
         //std::cout << "Filename :" << diag_filename << ";" << diag_fullpath << std::endl;
         dialog_filelist[diag_filename] = diag_fullpath;
         this->ui->dialog_combBox->addItem(QString::fromStdString(diag_filename));
