@@ -15,7 +15,7 @@ QMAKE_LFLAGS_RELEASE -= -O1
 
 SOURCES = main.cpp
 
-HEADERS =
+HEADERS = statistics.h
 
 INCLUDEPATH += ../JSONParser/
 LIBS += -L../JSONParser/ -lJSONParser
