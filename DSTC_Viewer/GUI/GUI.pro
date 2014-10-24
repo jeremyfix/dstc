@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-TARGET = dstc-viewer
+TARGET = ../dstc-viewer
 TEMPLATE = app
 
 CONFIG += uitools link_pkgconfig
