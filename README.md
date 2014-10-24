@@ -32,6 +32,16 @@ You can view :
 
 All these files must fit the DSTC JSON format.
 
+Statistics
+----------
+
+db_statistics allows you to compute statistics over the dialogs. It displays the statistics in the console and generate a LaTex file for it as well that you need to compile (calling pdflatex 2 times on it); Below are the computed statistics for DSTC-2 :
+
+- [DSTC-2 training data](./dstc2_train.flist.pdf "DSTC-2 training")
+- [DSTC-2 dev data](./dstc2_train.flist.pdf "DSTC-2 dev")
+- [DSTC-2 test data](./dstc2_train.flist.pdf "DSTC-2 test")
+
+
 Screenshots
 -----------
 
