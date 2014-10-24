@@ -1,7 +1,7 @@
 Dialog State Tracking Challenge viewer
 ======================================
 
-This application aims at providing an easy way to visualize the JSON data under the format of [Dialog State Tracking Challenge](http://camdial.org/~mh521/dstc/).
+This application aims at providing an easy way to visualize the JSON data under the format of [Dialog State Tracking Challenge](http://camdial.org/~mh521/dstc/). It has developped while working in the [ANR MaRDi project](http://mardi.metz.supelec.fr)
 
 Install
 -------
