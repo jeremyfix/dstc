@@ -10,7 +10,14 @@ To make use of the viewer, you need Qt to be installed. Then enter in the direct
 
 - qmake
 - make
-- ./DSTC_Viewer
+
+You can then run the GUI using :
+
+- ./dstc_Viewer
+
+Or compute statistics over the databases using :
+
+- ./db_statistics filename.flist
 
 If lost, check the help message.
 
