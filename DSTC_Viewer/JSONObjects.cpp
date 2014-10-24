@@ -27,6 +27,29 @@ std::string dialog_act_to_string(Json::Value& value) {
     return ostr.str();
 }
 
+void extract_acts(Json::Value& value, std::list<DialogAct>& act_and_slots) {
+  for(unsigned int i = 0 ; i < value.size() ; ++i) {
+    DialogAct dact;
+    dact.act = value[i]["act"].asString();
+    Json::Value value_slots = value[i]["slots"];
+    for(unsigned int j = 0 ; j < value_slots.size(); ++j) {
+      Json::Value value_slot = value_slots[j];
+      if(value_slot.size() == 2) {
+	std::string first = value_slot[0].asString();
+	std::string second;
+	if(first == std::string("count")) 
+	  second = std::to_string(value_slot[1].asInt());
+	else 
+	  second = value_slot[1].asString();
+	dact.act_slots.push_back(std::make_pair(first, second));
+      }
+      else 
+	std::cerr << "in extract_act, I thought \"slots\" contained list of PAIRS!" << std::endl;
+    }
+    act_and_slots.push_back(dact);
+  }
+}
+
 Ontology parse_ontology_json_file(std::string filename) {
     Ontology ontology;
 
@@ -117,13 +140,20 @@ Dialog parse_dialog_json_file(std::string filename) {
             // Process the slu-hyps
             for(unsigned int j = 0 ; j < sluhyps.size() ; ++j) {
                 setlocale(LC_NUMERIC, "C"); // this allows to correctly parse, for example, 1.2 instead of 1,2 which is rendered as 1
-		dturn.slu_hyps.push_back(std::make_pair(dialog_act_to_string(sluhyps[j]["slu-hyp"]),
-							sluhyps[j]["score"].asDouble()));			
-            }
+		Json::Value sluhyp_j = sluhyps[j];
+		dturn.slu_hyps.push_back(std::make_pair(dialog_act_to_string(sluhyp_j["slu-hyp"]),
+							sluhyp_j["score"].asDouble()));
+		std::list<DialogAct> user_acts_j;
+		extract_acts(sluhyp_j["slu-hyp"], user_acts_j);
+		dturn.user_acts.push_back(std::make_pair(user_acts_j, sluhyp_j["score"].asDouble()));
+	    }
 
             // Process the output of the system (transcripts and dialog_act)
             dturn.transcript = turn_output["transcript"].asString();
             dturn.dialog_act = dialog_act_to_string(turn_output["dialog-acts"]);
+	    Json::Value machine_acts = turn_output["dialog-acts"];
+	    extract_acts(machine_acts, dturn.machine_acts);
+	    
 
             dialog.turns.push_back(dturn);
         }

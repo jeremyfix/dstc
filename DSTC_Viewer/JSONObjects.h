@@ -39,6 +39,11 @@ struct Ontology {
 //////////////
 // The structs for representing one dialog
 
+struct DialogAct {
+  std::string act;
+  std::list< std::pair<std::string, std::string> > act_slots;
+};
+
 struct DialogTurn {
   int turn_index;
 
@@ -46,9 +51,12 @@ struct DialogTurn {
   std::list< std::pair<std::string, double> > asr_hyps;
   std::list< std::pair<std::string, double> > slu_hyps;
 
+  std::list< std::pair< std::list<DialogAct>, double > > user_acts;
+
   // Output
   std::string transcript;
   std::string dialog_act;
+  std::list<DialogAct> machine_acts;
 };
 
 struct Dialog {
@@ -115,6 +123,7 @@ struct TrackerOutput {
 
 
 std::string dialog_act_to_string(Json::Value& value);
+void extract_acts(Json::Value& value, std::list<DialogAct>& act_slots);
 Ontology parse_ontology_json_file(std::string filename);
 Dialog parse_dialog_json_file(std::string filename);
 DialogLabels parse_label_json_file(std::string filename);
