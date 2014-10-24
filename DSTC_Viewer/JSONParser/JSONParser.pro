@@ -1,0 +1,14 @@
+TEMPLATE = lib
+CONFIG = staticlib link_pkgconfig
+
+PKGCONFIG += jsoncpp
+
+QMAKE_CXXFLAGS += -std=c++0x
+QMAKE_CXXFLAGS_RELEASE -= -O2
+QMAKE_CXXFLAGS_RELEASE += -O3
+QMAKE_LFLAGS_RELEASE -= -O1
+
+
+SOURCES = JSONObjects.cpp
+HEADERS = JSONObjects.h
+
