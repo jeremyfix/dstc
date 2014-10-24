@@ -152,6 +152,24 @@ void MainWindow::changeDialog(QString value) {
 	      low_level_items.push_back(new QTreeWidgetItem(asrhyp_item, column_values));
             }
 
+
+	    // Debug : display the individually extracted slu hyps
+	    /*
+	    std::cout << "Turn " << turn_index << std::endl;
+	    std::cout << "Machine act : " << std::endl;
+	    display_dialog_acts(current_turn.machine_acts);
+	    std::cout << "User act : " << std::endl;
+	    for(auto&  uact : current_turn.user_acts) {
+	      if(uact.first.size() == 0) 
+		std::cout << "Empty " << std::endl;
+	      else
+	        display_dialog_acts(uact.first);
+	      std::cout << " ; Score : " << uact.second << std::endl << std::endl;
+	    }
+	    std::cout << std::string(10, '-') << std::endl;
+	    */
+
+
             // Display the slu hypothesis
             QTreeWidgetItem* sluhyp_item = new QTreeWidgetItem(top_level_items.last(), QStringList(QString("slu-hyps")));
 

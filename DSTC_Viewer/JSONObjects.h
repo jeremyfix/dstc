@@ -130,4 +130,6 @@ DialogLabels parse_label_json_file(std::string filename);
 TrackerOutput parse_tracker_output_json_file(std::string filename);
 
 
+void display_dialog_acts(std::list<DialogAct>& acts);
+
 #endif // JSONOBJECTS_H

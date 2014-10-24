@@ -142,7 +142,7 @@ Dialog parse_dialog_json_file(std::string filename) {
                 setlocale(LC_NUMERIC, "C"); // this allows to correctly parse, for example, 1.2 instead of 1,2 which is rendered as 1
 		Json::Value sluhyp_j = sluhyps[j];
 		dturn.slu_hyps.push_back(std::make_pair(dialog_act_to_string(sluhyp_j["slu-hyp"]),
-							sluhyp_j["score"].asDouble()));
+							sluhyp_j["score"].asFloat()));
 		std::list<DialogAct> user_acts_j;
 		extract_acts(sluhyp_j["slu-hyp"], user_acts_j);
 		dturn.user_acts.push_back(std::make_pair(user_acts_j, sluhyp_j["score"].asDouble()));
@@ -377,4 +377,18 @@ TrackerOutput parse_tracker_output_json_file(std::string filename) {
     }
 
     return tracker_output;
+}
+
+
+void display_dialog_acts(std::list<DialogAct>& acts) {
+  for(auto& acti : acts) {
+    std::cout << "Act : " << acti.act << "; ";
+    std::cout << "Slots : [";
+    for(auto& acti_sloti: acti.act_slots) {
+      std::cout << "{" << acti_sloti.first 
+		<< ";" << acti_sloti.second 
+		<< "}" ;
+    }
+    std::cout << "]" << std::endl;
+  }
 }
