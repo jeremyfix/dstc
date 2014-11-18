@@ -40,6 +40,9 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this->ui->dialog_prevButton, SIGNAL(clicked()), this, SLOT(prev_dialog()));
     connect(this->ui->dialog_nextButton, SIGNAL(clicked()), this, SLOT(next_dialog()));
 
+    // Using the possibility to filter the dialogs by a prefix
+    connect(this->ui->dialog_prefix_lineedit, SIGNAL(textChanged(QString)), this, SLOT(dialog_prefix_textChanged(QString)));
+
     // Getting the info the tracker output wants to be sync to the mainwindow session id
     connect(&tracker_output_viewer, SIGNAL(sig_sync_to_dialog(bool)), this, SLOT(sync_tracker_output_to_session(bool)));
 
@@ -70,6 +73,8 @@ void MainWindow::openDialogs() {
                                                     tr("Open dialogs list file"), 
 						    "~", 
 						    tr("Dialog list files (*.flist)"));
+
+    this->ui->dialog_prefix_lineedit->setText("");
 
     // We open and parse the file
     // we save the data in a map with :
@@ -247,4 +252,13 @@ void MainWindow::showTips() {
     help_msg += " (*) If the filelist file is in path P, when reading a path Q to a dialog in this file we look at P/../../data/Q<br>";
     msgBox.setText(help_msg);
     msgBox.exec();
+}
+
+void MainWindow::dialog_prefix_textChanged(QString text) {
+  // We filter all the dialog filenames and display in the combo box only the ones for which 
+  // text is a prefix
+  this->ui->dialog_combBox->clear();
+  for(auto& kv: dialog_filelist) 
+    if(QString::compare(text, QString::fromStdString(kv.first.substr(0, text.size())), Qt::CaseInsensitive) == 0) 
+      this->ui->dialog_combBox->addItem(QString::fromStdString(kv.first));
 }

@@ -67,6 +67,8 @@ public slots:
 
     void sync_tracker_output_to_session(bool);
 
+    void dialog_prefix_textChanged(QString text);
+
     void showTips(void);
 };
 
