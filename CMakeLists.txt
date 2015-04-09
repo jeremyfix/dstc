@@ -10,6 +10,15 @@ SET(CMAKE_BUILD_TYPE Release)
 
 SET(PROJECT_DESCRIPTION_SUMMARY "C++ tools for the belief tracker problem on the DSTC data")
 
+option(DSTC_Viewer "Do you want to compile the viewer as well ? (ON/OFF(default))" OFF)
+
+IF(${DSTC_Viewer} MATCHES "ON")
+  MESSAGE("I will compile the viewer of the DSTC data")
+ELSE(${DSTC_Viewer} MATCHES "ON")
+  MESSAGE("I will NOT compile the viewer of the DSTC data, add -DDSTC_Viewer=ON otherwise")
+ENDIF()
+
+
 #######################################
 # Get the libs/inc for the dependencies
 #######################################
@@ -23,12 +32,14 @@ set(PKG_CONFIG_DEPENDS "jsoncpp")
 #######################################
 # Get the libs/inc for the viewer
 #######################################
-set(DESIRED_QT_VERSION 4)
-find_package(Qt REQUIRED)
-include_directories(${QT_INCLUDE_DIRS} ${QT_INCLUDE_DIR})
-SET(QT_USE_QTOPENGL TRUE)
-INCLUDE(${QT_USE_FILE})
-ADD_DEFINITIONS(${QT_DEFINITIONS})
+IF(${DSTC_Viewer} MATCHES "ON")
+  set(DESIRED_QT_VERSION 4)
+  find_package(Qt REQUIRED)
+  include_directories(${QT_INCLUDE_DIRS} ${QT_INCLUDE_DIR})
+  SET(QT_USE_QTOPENGL TRUE)
+  INCLUDE(${QT_USE_FILE})
+  ADD_DEFINITIONS(${QT_DEFINITIONS})
+ENDIF()
 
 #######################################
 # Setting the compilation flags

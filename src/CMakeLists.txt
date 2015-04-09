@@ -39,13 +39,14 @@ install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/statistics
 
 ######################################################
 # Define the stuff for the viewer
-
-set(qobject_headers labelviewer.h mainwindow.h ontologyviewer.h trackeroutputviewer.h)
-QT4_WRAP_CPP(qobject_headers_MOC ${qobject_headers})
-set(qt_ui_files labelviewer.ui mainwindow.ui ontology_viewer.ui trackeroutputviewer.ui)
-QT4_WRAP_UI(qt_UI ${qt_ui_files})
-add_executable (viewer labelviewer.cpp main_viewer.cpp mainwindow.cpp ontologyviewer.cpp  trackeroutputviewer.cpp ${qobject_headers_MOC} ${qt_UI})
-set_target_properties(viewer PROPERTIES LINKER_LANGUAGE CXX)
-set_target_properties(viewer PROPERTIES COMPILE_FLAGS "${PROJECT_ALL_CFLAGS}" LINK_FLAGS "${PROJECT_ALL_LDFLAGS}")
-target_link_libraries(viewer ${QT_LIBRARIES})
-add_dependencies(viewer dstcjson)
+IF(${DSTC_Viewer} MATCHES "ON")
+  set(qobject_headers labelviewer.h mainwindow.h ontologyviewer.h trackeroutputviewer.h)
+  QT4_WRAP_CPP(qobject_headers_MOC ${qobject_headers})
+  set(qt_ui_files labelviewer.ui mainwindow.ui ontology_viewer.ui trackeroutputviewer.ui)
+  QT4_WRAP_UI(qt_UI ${qt_ui_files})
+  add_executable (viewer labelviewer.cpp main_viewer.cpp mainwindow.cpp ontologyviewer.cpp  trackeroutputviewer.cpp ${qobject_headers_MOC} ${qt_UI})
+  set_target_properties(viewer PROPERTIES LINKER_LANGUAGE CXX)
+  set_target_properties(viewer PROPERTIES COMPILE_FLAGS "${PROJECT_ALL_CFLAGS}" LINK_FLAGS "${PROJECT_ALL_LDFLAGS}")
+  target_link_libraries(viewer ${QT_LIBRARIES})
+  add_dependencies(viewer dstcjson)
+ENDIF()
