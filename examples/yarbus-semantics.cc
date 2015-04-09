@@ -5,7 +5,9 @@
 #include <random>
 #include <set>
 #include <iterator> 
+#include <chrono>
 #include <boost/filesystem.hpp>
+typedef std::chrono::high_resolution_clock clock_type;
 
 // In this example, we make use of the "semantics" in the labels
 // in order to simulate a perfect SLU (actually the labeller)
@@ -31,6 +33,10 @@ int main(int argc, char * argv[]) {
     std::cerr << "Usage : " << argv[0] << " filename.flist ontology verbose(0,1) <session-id>" << std::endl;
     return -1;
   }
+
+  std::cout << "The Yarbus tracker is run over the \"semantics\" field of the labels, simulating a perfect SLU" << std::endl;
+
+  auto clock_begin = clock_type::now();
 
   std::string flist_filename = argv[1];
   std::string ontology_filename = argv[2];
@@ -62,7 +68,7 @@ int main(int argc, char * argv[]) {
   // We parse the flist to access to the dialogs
   if(verbose) std::cout << "Parsing the flist file for getting the dialog and label files" << std::endl;
   auto dialog_label_fullpath = belief_tracker::parse_flist(flist_filename);
-  if(verbose) std::cout << "I parsed " << dialog_label_fullpath.size() << " dialogs (and labels if present) " << std::endl;
+  if(verbose) std::cout << "I parsed " << dialog_label_fullpath.size() << " dialogs" << std::endl;
   if(verbose) std::cout << "done " << std::endl;
 
   // The structure holding the output
@@ -73,19 +79,6 @@ int main(int argc, char * argv[]) {
   tracker_output.dataset = pathname.filename().string();
   int lastindex = tracker_output.dataset.find_last_of("."); 
   tracker_output.dataset = tracker_output.dataset.substr(0, lastindex); 
-
-  //////////////////////////////
-  // Structures for holding the measures over the dialogs and turns
-  std::map<std::string, int> measures {
-    {"tot_nb_mistakes", 0},
-      {"tot_nb_turns", 0},
-	{"nb_dialogs_at_least_one_mistake", 0},
-	  {"nb_turns_at_least_one_mistake", 0}
-  };
-
-  // A map containing the dialogs on which we make a mistake
-  // it maps a session id to the number of errors we make
-  std::map<std::string, int> mistaken_dialogs;
 
   unsigned int dialog_index = 0;
   unsigned int number_of_dialogs  = dialog_label_fullpath.size();
@@ -134,22 +127,14 @@ int main(int argc, char * argv[]) {
     dialog_turn_iter = dialog.turns.begin();
     tracker_output.sessions_turns.push_back(std::make_pair(dialog.session_id, std::vector<belief_tracker::TrackerSessionTurn>()));
 
-    std::map<std::string, int> local_measures {
-      {"nb_differences", 0},
-    	    {"nb_turns_at_least_one_mistake", 0}
-    };
-
-
     // //////////////////////////////////////////////
     // // We now iterate over the turns of the dialog
-    std::map< std::string, std::string > cur_goal_label;
 
    for(unsigned int turn_index = 0; turn_index < nb_turns ; ++turn_index, ++dialog_turn_iter) {
      if(verbose) {
        std::cout << "****** Turn " << turn_index << " ***** " << dialog.session_id << std::endl;
        std::cout << std::endl;
        std::cout << "Dialog path : " << dialog_fullpath << std::endl;
-       std::cout << "Label path : " << label_fullpath << std::endl;
        std::cout << std::endl;
      }
 
@@ -170,8 +155,6 @@ int main(int argc, char * argv[]) {
 
       auto turn_info = info::extract_info(slu_hyps, macts, rules, verbose);
 
-      cur_goal_label = labels.turns[turn_index].goal_labels;
-
      // We now use the scored info to update the probability distribution
       // over the values of each slot
       // This produces the tracker output for this dialog
@@ -185,14 +168,6 @@ int main(int argc, char * argv[]) {
 
       auto best_goal = belief.extract_best_goal();
 
-      int nb_differences = belief_tracker::nb_differences_goal_to_label(best_goal, cur_goal_label);
-
-      local_measures["nb_differences"] += nb_differences;
-
-      if(nb_differences > 0) 
-    	local_measures["nb_turns_at_least_one_mistake"] += 1;
-
-
       /****** For debugging, we take the labels  ******/
       if(verbose) {
 	std::cout << "Machine act : " << belief_tracker::dialog_acts_to_str(macts) << std::endl;
@@ -205,8 +180,6 @@ int main(int argc, char * argv[]) {
 	std::cout << "Belief :" << std::endl;
 	std::cout << belief << std::endl;
 	std::cout << "Best goal : " << best_goal.toStr() << std::endl;
-	std::cout << "Labels : " << labels.turns[turn_index].goal_labels_str << std::endl;
-	std::cout << "Nb differences 1best to goal : " << nb_differences << std::endl;
       }
       /******* END DEBUG *****/
       if(verbose) std::cout << std::endl;
@@ -222,19 +195,6 @@ int main(int argc, char * argv[]) {
       prev_mach_acts = macts;
 
     }
-
-    // Update the statistics 
-    measures["tot_nb_mistakes"] += local_measures["nb_differences"];
-    measures["tot_nb_turns"] += nb_turns;
-    measures["nb_dialogs_at_least_one_mistake"] += (local_measures["nb_differences"] > 0 ? 1 : 0);
-    measures["nb_turns_at_least_one_mistake"] += local_measures["nb_turns_at_least_one_mistake"];
-
-    if(local_measures["nb_differences"] > 0)
-      mistaken_dialogs[session_id] = local_measures["nb_differences"];
-
-
-
-    if(verbose) std::cout << "fraction of turns the best hyp has 1 diff from the labels : " << double(local_measures["nb_turns_at_least_one_mistake"]) / nb_turns << std::endl;
     
     if(process_a_single_dialog && session_to_process == dialog.session_id) {
       break;
@@ -244,30 +204,21 @@ int main(int argc, char * argv[]) {
   }
   std::cout << std::endl;
 
+  // Take the clock for computing the walltime
+  auto clock_end = clock_type::now();
+  double walltime = std::chrono::duration_cast<std::chrono::seconds>(clock_end - clock_begin).count();
+
   // At the end, we dump the tracker output in the JSON format
-  tracker_output.walltime = 10000; // TODO !!!!
+  tracker_output.walltime = walltime; 
   std::ostringstream ostr;
   ostr.str("");
   ostr << tracker_output.dataset << "-output.json";
   belief_tracker::dump_tracker_output_json_file(tracker_output, ostr.str());
   std::cout << "Output saved to " << ostr.str() << std::endl;
 
-  std::cout << measures["nb_dialogs_at_least_one_mistake"] << "/" << dialog_label_fullpath.size() << "(" << double(measures["nb_dialogs_at_least_one_mistake"])/dialog_label_fullpath.size() * 100. << " %)  dialogs have at least one mistake " << std::endl;
-  std::cout << "A total number of " << measures["tot_nb_mistakes"] << " mistakes have been done" << std::endl;
-  std::cout << "We made at least one mistake in " << measures["nb_turns_at_least_one_mistake"] << " / " << measures["tot_nb_turns"] << " turns, i.e. " << measures["nb_turns_at_least_one_mistake"] * 100. / measures["tot_nb_turns"] << " % (acc 1a = " << 1.0 - (double)measures["nb_turns_at_least_one_mistake"]  / measures["tot_nb_turns"] <<  ") " << std::endl;
-  std::cout << "There were a total of " << measures["tot_nb_turns"] << " turns" << std::endl;
-
   // We exit here if we were processing a single dialog
   if(process_a_single_dialog)
     return 0;
-
-  // At the end, we dump the tracker output in the JSON format
-  std::ofstream outfile;
-  outfile.open("mistaken_dialogs.data");
-  for(auto& kv: mistaken_dialogs)
-    outfile << kv.first << '\t' << kv.second << std::endl;
-  outfile.close();
-  std::cout << "Mistaken dialogs saved in mistaken_dialogs.data" << std::endl;
 
 
 }

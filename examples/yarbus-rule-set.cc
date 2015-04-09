@@ -122,7 +122,7 @@ int main(int argc, char * argv[]) {
   // We parse the flist to access to the dialogs
   if(verbose) std::cout << "Parsing the flist file for getting the dialog files" << std::endl;
   auto dialog_label_fullpath = belief_tracker::parse_flist(flist_filename);
-  if(verbose) std::cout << "I parsed " << dialog_label_fullpath.size() << " dialogs (and labels if present) " << std::endl;
+  if(verbose) std::cout << "I parsed " << dialog_label_fullpath.size() << " dialogs" << std::endl;
   if(verbose) std::cout << "done " << std::endl;
 
   // Compute and set the dataset name
