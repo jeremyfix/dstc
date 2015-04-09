@@ -1,28 +1,55 @@
-Dialog State Tracking Challenge viewer
-======================================
+Dialog State Tracking Challenge viewer, statistics and Yarbus baseline
+======================================================================
 
-This application aims at providing an easy way to visualize the JSON data under the format of [Dialog State Tracking Challenge](http://camdial.org/~mh521/dstc/). It has developped while working in the [ANR MaRDi project](http://mardi.metz.supelec.fr)
+In this repository , you will find various tools in C++:
 
-Install
--------
+- a tool for computing statistics on the dialog acts in the Dialog State Tracking challenge datasets (dstc2, dstc3)
+- a tool for viewing the data as well as tracker outputs (synchronized to the viewer of the dialog/label files)
+- the scripts for running the Yarbus tracker
 
-To make use of the viewer, you need Qt to be installed. Then enter in the directory and type :
+It aims at providing an easy way to play with the JSON data under the format of [Dialog State Tracking Challenge](http://camdial.org/~mh521/dstc/). It has developped while working in the [ANR MaRDi project](http://mardi.metz.supelec.fr)
 
-- qmake
+Install/Usage
+-------------
+
+- mkdir build
+- cd build
+- cmake ..
+- make 
+
+As the viewer requires Qt, it has been disabled by default. To allow its compilation, you have to activate it while running cmake :
+
+- cmake .. -DDSTC_Viewer=ON
 - make
 
-You can then run the GUI using :
+The project is not aimed to be installed anywhere, so set up your LD_LIBRARY_FLAGS correctly before running the scripts :
+- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./src
 
-- ./dstc_Viewer
 
-Or compute statistics over the databases using :
+More about the Statistics
+-------------------------
 
-- ./db_statistics filename.flist
+To compute the statistics
 
-If lost, check the help message.
+- cd CLONE_DIR/build
+- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./src
+- ./src/statistics  dstc2_test.flist
 
-Data
-----
+statistics allows you to compute statistics over the dialogs. It displays the statistics in the console and generate a LaTex file for it as well that you need to compile (calling pdflatex 2 times on it); Below are the computed statistics for DSTC-2 :
+
+- [DSTC-2 training data](./dstc2_train.flist.pdf "DSTC-2 training")
+- [DSTC-2 dev data](./dstc2_dev.flist.pdf "DSTC-2 dev")
+- [DSTC-2 test data](./dstc2_test.flist.pdf "DSTC-2 test")
+
+
+More about the GUI
+------------------
+
+
+To run the GUI : 
+- cd CLONE_DIR/build
+- export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:./src
+- ./src/viewer 
 
 You can view :
 
@@ -32,17 +59,6 @@ You can view :
 
 All these files must fit the DSTC JSON format.
 
-Statistics
-----------
-
-db_statistics allows you to compute statistics over the dialogs. It displays the statistics in the console and generate a LaTex file for it as well that you need to compile (calling pdflatex 2 times on it); Below are the computed statistics for DSTC-2 :
-
-- [DSTC-2 training data](./dstc2_train.flist.pdf "DSTC-2 training")
-- [DSTC-2 dev data](./dstc2_dev.flist.pdf "DSTC-2 dev")
-- [DSTC-2 test data](./dstc2_test.flist.pdf "DSTC-2 test")
-
-
-Screenshots
------------
-
 ![Viewer](./Pics/screenshot.png "The viewers of DSTC files")
+
+
