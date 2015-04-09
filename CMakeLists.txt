@@ -51,23 +51,13 @@ SET(PROJECT_CFLAGS "-Wall -std=c++11")
 # cflags added by the pkg-config dependencies contains ';' as separator. This is a fix.
 string(REPLACE ";" " " JSONCPP_CFLAGS "${JSONCPP_CFLAGS}")
 
-# lib flags added by the package
-SET(PROJECT_LIBS "-Wl,--no-as-needed -ldstcjson") #-lbelief-tracker, 
-
 # libs added by the pkg-config dependencies contains ';' as separator. This is a fix.
 string(REPLACE ";" " " JSONCPP_LDFLAGS "${JSONCPP_LDFLAGS}")
-
-# ldflags required, but not provided by pkg-config
-SET(PROJECT_LDFLAGS "-lboost_system -lboost_filesystem")
 
 # Gathering of all flags
 # (e.g. for compiling examples)
 SET(PROJECT_ALL_CFLAGS  "${PROJECT_CFLAGS} ${JSONCPP_CFLAGS}")
-SET(PROJECT_ALL_LDFLAGS "${PROJECT_LIBS} ${PROJECT_LDFLAGS} -L${CMAKE_BINARY_DIR}/src ${JSONCPP_LDFLAGS}")
-
-# Gathering of all flags from dependancies flags
-# (e.g. for compiling libraries)
-SET(PROJECT_ALL_DEP_LDFLAGS "${PROJECT_LDFLAGS} ${JSONCPP_LDFLAGS}")
+SET(PROJECT_ALL_LDFLAGS "-Wl,--no-as-needed ${JSONCPP_LDFLAGS} -lboost_system -lboost_filesystem")
 
 ###################################
 # Some prefix definitions
@@ -110,7 +100,7 @@ INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.pc
 #  Subdirectories
 ###################################
 add_subdirectory(src)
-#add_subdirectory(examples)
+add_subdirectory(examples)
 #add_subdirectory(doc)
 
 
