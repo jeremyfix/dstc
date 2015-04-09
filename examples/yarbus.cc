@@ -12,84 +12,18 @@ namespace info = belief_tracker::info::single_info;
 typedef belief_tracker::joint::sum::Belief belief_type;
 namespace this_reference = belief_tracker::this_reference::single;
 
-std::list<belief_tracker::info::single_info::rules::rule_type> full_set = {
-  belief_tracker::info::single_info::rules::inform,
-  belief_tracker::info::single_info::rules::explconf,
-  belief_tracker::info::single_info::rules::implconf,
-  belief_tracker::info::single_info::rules::negate,
-  belief_tracker::info::single_info::rules::deny
-};
-
-std::list<std::string> full_set_names = {
-  "inform rule",
-  "expl-conf rule",
-  "impl-conf rule",
-  "negate rule",
-  "deny rule"
-};
-
-// The outputed rule number corresponds to
-// <use inform> <use explconf> <use implconf> <use negate> <use deny>
-// CAUTIOUS : This must be read as the reverse order of the integer defining the rule you provide to the script
-std::string rule_set_number_to_str(int rule_set_number) {
-  unsigned int Nrules = full_set.size();
-  std::string rule = "";
-  for(unsigned int i = 0 ; i < Nrules; ++i) {
-    if(rule_set_number % 2 == 1)
-      rule = std::string("1") + rule;
-    else
-      rule = std::string("0") + rule;
-    rule_set_number /= 2;	
-  }
-  return rule;
-}
-
-void build_rule_set(int rule_set_number, std::list<belief_tracker::info::single_info::rules::rule_type>& rules) {
-   // We use a binary code for the rule set
-   //  B4 : inform
-   //  B3 : explconf
-   //  B2 : implconf
-   //  B1 : negate
-   //  B0 : deny
-
-  for(int i = full_set.size() - 1; i >= 0; --i) {
-     if(rule_set_number % 2 == 1) {
-       auto full_set_iter = full_set.begin();
-       std::advance(full_set_iter, i);
-       rules.push_back(*full_set_iter);
-
-       auto full_set_name_iter = full_set_names.begin();
-       std::advance(full_set_name_iter, i);
-       std::cout << "I keep the " << *full_set_name_iter << std::endl;
-     }
-     
-     rule_set_number /= 2;
-   }
-
-}
+/*
+namespace info = belief_tracker::info::multi_info;
+typedef belief_tracker::joint::sum::Belief belief_type;
+namespace this_reference = belief_tracker::this_reference::weak_dontcare;
+*/
 
 int main(int argc, char * argv[]) {
 
-  if(argc != 6 && argc != 7) {
-    std::cerr << "Usage : " << argv[0] << " filename.flist ontology belief_thr verbose(0,1) rule_set_number <session-id>" << std::endl;
-    std::cerr << "The rule_set_number is an integer defining which rules to be used decoded in binary as :" << std::endl;
-    std::cerr << "B4|B3|B2|B1|B0 with Bi in {0, 1} and : " << std::endl;
-    std::cerr << "B4 : inform rule " << std::endl;
-    std::cerr << "B3 : expl-conf rule " << std::endl;
-    std::cerr << "B2 : impl-conf rule " << std::endl;
-    std::cerr << "B1 : negate rule " << std::endl;
-    std::cerr << "B0 : deny rule " << std::endl;
-
-  //  B4 : deny
-   //  B3 : negate
-   //  B2 : implconf
-   //  B1 : explconf
-   //  B0 : inform
-
-
+  if(argc != 5 && argc != 6) {
+    std::cerr << "Usage : " << argv[0] << " filename.flist ontology belief_thr verbose(0,1) <session-id>" << std::endl;
     return -1;
   }
-
 
   auto clock_begin = clock_type::now();
 
@@ -98,20 +32,22 @@ int main(int argc, char * argv[]) {
   double belief_thr = atof(argv[3]);
   bool verbose = atoi(argv[4]);  
 
-  int rule_set_number = atoi(argv[5]);
-  std::cout << "Using rule set " << rule_set_number_to_str(rule_set_number) << std::endl;
-
   bool process_a_single_dialog = false;
   std::string session_to_process;
-  if(argc == 7) {
+  if(argc == 6) {
     process_a_single_dialog = true;
-    session_to_process = std::string(argv[6]);
+    session_to_process = std::string(argv[5]);
   }
 
   // We define the set of rules to be used for extracting the informations
-  std::list<belief_tracker::info::single_info::rules::rule_type> rules;
-  build_rule_set(rule_set_number, rules);
-  std::cout << "We are going to use " << rules.size() << " rules " << std::endl;
+  std::list<belief_tracker::info::single_info::rules::rule_type> rules {
+    belief_tracker::info::single_info::rules::inform,
+      belief_tracker::info::single_info::rules::explconf,
+      belief_tracker::info::single_info::rules::implconf,
+      belief_tracker::info::single_info::rules::negate,
+      belief_tracker::info::single_info::rules::deny
+      };
+
 
 
   // We parse the ontology
@@ -120,7 +56,7 @@ int main(int argc, char * argv[]) {
   belief_tracker::Converter::init(ontology);
 
   // We parse the flist to access to the dialogs
-  if(verbose) std::cout << "Parsing the flist file for getting the dialog files" << std::endl;
+  if(verbose) std::cout << "Parsing the flist file for getting the dialog and label files" << std::endl;
   auto dialog_label_fullpath = belief_tracker::parse_flist(flist_filename);
   if(verbose) std::cout << "I parsed " << dialog_label_fullpath.size() << " dialogs (and labels if present) " << std::endl;
   if(verbose) std::cout << "done " << std::endl;
@@ -134,7 +70,7 @@ int main(int argc, char * argv[]) {
   // The stream for saving the tracker output
   std::ostringstream ostr;
   ostr.str("");
-  ostr << "TrackersRuleSet/" << dataset_name << "-" << rule_set_number_to_str(rule_set_number) << "-output.json";
+  ostr << dataset_name << "-output.json";
   std::ofstream outfile_tracker(ostr.str().c_str());
 
   // Let us begin the serial save
@@ -195,6 +131,7 @@ int main(int argc, char * argv[]) {
 
     // //////////////////////////////////////////////
     // // We now iterate over the turns of the dialog
+
     for(unsigned int turn_index = 0; turn_index < nb_turns ; ++turn_index, ++dialog_turn_iter) {
       if(verbose) {
     	std::cout << "****** Turn " << turn_index << " ***** " << dialog.session_id << std::endl;
@@ -234,6 +171,7 @@ int main(int argc, char * argv[]) {
       belief_tracker::requested_slots::update(slu_hyps, macts, requested_slots);
       belief_tracker::methods::update(slu_hyps, macts, methods);
 
+      // We can now compute some statistics given the labels
       auto best_goal = belief.extract_best_goal();
 
       /****** For debugging  ******/
@@ -268,7 +206,7 @@ int main(int argc, char * argv[]) {
 
     // Dump the current session
     belief_tracker::serial::dump_session(outfile_tracker, dialog.session_id, tracker_session, dialog_index == (number_of_dialogs - 1));
-     
+    
     if(process_a_single_dialog && session_to_process == dialog.session_id) {
       break;
     }
@@ -276,6 +214,9 @@ int main(int argc, char * argv[]) {
     ++dialog_index;
   }
   std::cout << std::endl;
+
+
+
 
   // Take the clock for computing the walltime
   auto clock_end = clock_type::now();
