@@ -12,12 +12,6 @@ namespace info = belief_tracker::info::single_info;
 typedef belief_tracker::joint::sum::Belief belief_type;
 namespace this_reference = belief_tracker::this_reference::single;
 
-/*
-namespace info = belief_tracker::info::multi_info;
-typedef belief_tracker::joint::sum::Belief belief_type;
-namespace this_reference = belief_tracker::this_reference::weak_dontcare;
-*/
-
 std::list<belief_tracker::info::single_info::rules::rule_type> full_set = {
   belief_tracker::info::single_info::rules::inform,
   belief_tracker::info::single_info::rules::explconf,
@@ -26,14 +20,25 @@ std::list<belief_tracker::info::single_info::rules::rule_type> full_set = {
   belief_tracker::info::single_info::rules::deny
 };
 
+std::list<std::string> full_set_names = {
+  "inform rule",
+  "expl-conf rule",
+  "impl-conf rule",
+  "negate rule",
+  "deny rule"
+};
+
+// The outputed rule number corresponds to
+// <use inform> <use explconf> <use implconf> <use negate> <use deny>
+// CAUTIOUS : This must be read as the reverse order of the integer defining the rule you provide to the script
 std::string rule_set_number_to_str(int rule_set_number) {
-  int Nrules = full_set.size();
+  unsigned int Nrules = full_set.size();
   std::string rule = "";
   for(unsigned int i = 0 ; i < Nrules; ++i) {
     if(rule_set_number % 2 == 1)
-      rule += "1";
+      rule = std::string("1") + rule;
     else
-      rule += "0";
+      rule = std::string("0") + rule;
     rule_set_number /= 2;	
   }
   return rule;
@@ -41,48 +46,47 @@ std::string rule_set_number_to_str(int rule_set_number) {
 
 void build_rule_set(int rule_set_number, std::list<belief_tracker::info::single_info::rules::rule_type>& rules) {
    // We use a binary code for the rule set
-   //  B4 : deny
-   //  B3 : negate
+   //  B4 : inform
+   //  B3 : explconf
    //  B2 : implconf
-   //  B1 : explconf
-   //  B0 : inform
+   //  B1 : negate
+   //  B0 : deny
 
-   auto full_set_iter = full_set.begin();
-   for(unsigned int i = 0 ; i < full_set.size(); ++i) {
-     if(rule_set_number % 2 == 1)
+  for(int i = full_set.size() - 1; i >= 0; --i) {
+     if(rule_set_number % 2 == 1) {
+       auto full_set_iter = full_set.begin();
+       std::advance(full_set_iter, i);
        rules.push_back(*full_set_iter);
+
+       auto full_set_name_iter = full_set_names.begin();
+       std::advance(full_set_name_iter, i);
+       std::cout << "I keep the " << *full_set_name_iter << std::endl;
+     }
      
      rule_set_number /= 2;
-     ++full_set_iter;
    }
 
-}
-
-
-std::string goal_label_to_str(const std::map<std::string, std::string>& goal_label) {
-  std::string str("(");
-  unsigned int nb_informable = belief_tracker::Converter::get_informable_slots_size();
-  for(unsigned int i = 0 ; i < nb_informable ; ++i) {
-    std::string slot_name = belief_tracker::Converter::get_slot(i);
-    str += slot_name + "=";
-    auto it = goal_label.find(slot_name);
-    if(it != goal_label.end())
-      str += it->second;
-    else
-      str += belief_tracker::SYMBOL_UNKNOWN;
-    
-    if(i != nb_informable -1)
-      str += ",";
-  }
-
-  str += ")";
-  return str;
 }
 
 int main(int argc, char * argv[]) {
 
   if(argc != 6 && argc != 7) {
     std::cerr << "Usage : " << argv[0] << " filename.flist ontology belief_thr verbose(0,1) rule_set_number <session-id>" << std::endl;
+    std::cerr << "The rule_set_number is an integer defining which rules to be used decoded in binary as :" << std::endl;
+    std::cerr << "B4|B3|B2|B1|B0 with Bi in {0, 1} and : " << std::endl;
+    std::cerr << "B4 : inform rule " << std::endl;
+    std::cerr << "B3 : expl-conf rule " << std::endl;
+    std::cerr << "B2 : impl-conf rule " << std::endl;
+    std::cerr << "B1 : negate rule " << std::endl;
+    std::cerr << "B0 : deny rule " << std::endl;
+
+  //  B4 : deny
+   //  B3 : negate
+   //  B2 : implconf
+   //  B1 : explconf
+   //  B0 : inform
+
+
     return -1;
   }
 
@@ -116,7 +120,7 @@ int main(int argc, char * argv[]) {
   belief_tracker::Converter::init(ontology);
 
   // We parse the flist to access to the dialogs
-  if(verbose) std::cout << "Parsing the flist file for getting the dialog and label files" << std::endl;
+  if(verbose) std::cout << "Parsing the flist file for getting the dialog files" << std::endl;
   auto dialog_label_fullpath = belief_tracker::parse_flist(flist_filename);
   if(verbose) std::cout << "I parsed " << dialog_label_fullpath.size() << " dialogs (and labels if present) " << std::endl;
   if(verbose) std::cout << "done " << std::endl;
@@ -140,20 +144,6 @@ int main(int argc, char * argv[]) {
   std::ofstream outfile_size("belief-size.data");
   std::cout << "The size of the belief will be dumped in belief-size.data" << std::endl;
 
-
-  //////////////////////////////
-  // Structures for holding the measures over the dialogs and turns
-  std::map<std::string, int> measures {
-    {"tot_nb_mistakes", 0},
-      {"tot_nb_turns", 0},
-	{"nb_dialogs_at_least_one_mistake", 0},
-	  {"nb_turns_at_least_one_mistake", 0}
-  };
-
-  // A map containing the dialogs on which we make a mistake
-  // it maps a session id to the number of errors we make
-  std::map<std::string, int> mistaken_dialogs;
-
   unsigned int dialog_index = 0;
   unsigned int number_of_dialogs  = dialog_label_fullpath.size();
   unsigned int nb_turns;
@@ -162,7 +152,7 @@ int main(int argc, char * argv[]) {
   for(auto& dlfpi: dialog_label_fullpath) {
 
     std::string dialog_fullpath = dlfpi[0];
-    std::string label_fullpath = dlfpi[1];
+    //std::string label_fullpath = dlfpi[1];
     std::string session_id = dlfpi[2];
     std::string dialog_entry = dlfpi[3];
 
@@ -176,7 +166,6 @@ int main(int argc, char * argv[]) {
     std::list<belief_tracker::DialogAct> prev_mach_acts;
 
     dialog = belief_tracker::parse_dialog_json_file(dialog_fullpath);
-    labels = belief_tracker::parse_label_json_file(label_fullpath);
 
     std::cout << '\r' << "Processing dialog " << (dialog_index +1)<< "/" << number_of_dialogs << std::flush;
     if(verbose) std::cout << session_id << std::endl;
@@ -205,23 +194,13 @@ int main(int argc, char * argv[]) {
 
     std::vector<belief_tracker::TrackerSessionTurn> tracker_session;
 
-    std::map<std::string, int> local_measures {
-      {"nb_differences", 0},
-    	    {"nb_turns_at_least_one_mistake", 0}
-    };
-
-
     // //////////////////////////////////////////////
     // // We now iterate over the turns of the dialog
-    std::map< std::string, std::string > cur_goal_label;
-    std::list<double> stats;
-
     for(unsigned int turn_index = 0; turn_index < nb_turns ; ++turn_index, ++dialog_turn_iter) {
       if(verbose) {
     	std::cout << "****** Turn " << turn_index << " ***** " << dialog.session_id << std::endl;
     	std::cout << std::endl;
     	std::cout << "Dialog path : " << dialog_fullpath << std::endl;
-    	std::cout << "Label path : " << label_fullpath << std::endl;
     	std::cout << std::endl;
       }
       auto& slu_hyps = dialog_turn_iter->user_acts;
@@ -241,9 +220,6 @@ int main(int argc, char * argv[]) {
       // We can now proceed by extracting the informations from the SLU
       auto turn_info = info::extract_info(slu_hyps, macts, rules, verbose);
 
-      // In this example we make use of the labels for computing the mistakes
-      cur_goal_label = labels.turns[turn_index].goal_labels;
-
       // We now use the scored info to update the probability distribution
       // over the values of each slot
       // This produces the tracker output for this dialog
@@ -259,16 +235,7 @@ int main(int argc, char * argv[]) {
       belief_tracker::requested_slots::update(slu_hyps, macts, requested_slots);
       belief_tracker::methods::update(slu_hyps, macts, methods);
 
-
-
-      // We can now compute some statistics given the labels
       auto best_goal = belief.extract_best_goal();
-
-      int nb_differences = belief_tracker::nb_differences_goal_to_label(best_goal, cur_goal_label);
-      local_measures["nb_differences"] += nb_differences;
-
-      if(nb_differences > 0) 
-    	local_measures["nb_turns_at_least_one_mistake"] += 1;
 
       /****** For debugging  ******/
       if(verbose) {
@@ -280,10 +247,8 @@ int main(int argc, char * argv[]) {
     	std::cout << "Belief :" << std::endl;
     	std::cout <<  belief << std::endl;
     	std::cout << "Best goal : " << best_goal.toStr() << std::endl;
-    	std::cout << "Labels    : " << goal_label_to_str(cur_goal_label) << std::endl;
     	std::cout << "Methods : " << belief_tracker::methods::toStr(methods) << std::endl;
     	std::cout << "Requested slots : " << belief_tracker::requested_slots::toStr(requested_slots) << std::endl;
-    	std::cout << "Nb differences 1best to goal : " << nb_differences << std::endl;
       }
       /******* END DEBUG *****/
       if(verbose) std::cout << std::endl;
@@ -304,21 +269,7 @@ int main(int argc, char * argv[]) {
 
     // Dump the current session
     belief_tracker::serial::dump_session(outfile_tracker, dialog.session_id, tracker_session, dialog_index == (number_of_dialogs - 1));
-    
-
-    // Update the statistics 
-    measures["tot_nb_mistakes"] += local_measures["nb_differences"];
-    measures["tot_nb_turns"] += nb_turns;
-    measures["nb_dialogs_at_least_one_mistake"] += (local_measures["nb_differences"] > 0 ? 1 : 0);
-    measures["nb_turns_at_least_one_mistake"] += local_measures["nb_turns_at_least_one_mistake"];
-
-    if(local_measures["nb_differences"] > 0)
-      mistaken_dialogs[session_id] = local_measures["nb_differences"];
-
-
-
-    if(verbose) std::cout << "fraction of turns the best hyp has 1 diff from the labels : " << double(local_measures["nb_turns_at_least_one_mistake"]) / nb_turns << std::endl;
-    
+     
     if(process_a_single_dialog && session_to_process == dialog.session_id) {
       break;
     }
@@ -327,30 +278,9 @@ int main(int argc, char * argv[]) {
   }
   std::cout << std::endl;
 
-
-
-
   // Take the clock for computing the walltime
   auto clock_end = clock_type::now();
   double walltime = std::chrono::duration_cast<std::chrono::seconds>(clock_end - clock_begin).count();
-
-
-
-
-  // Display the statistics
-  std::cout << measures["nb_dialogs_at_least_one_mistake"] << "/" << dialog_label_fullpath.size() << "(" << double(measures["nb_dialogs_at_least_one_mistake"])/dialog_label_fullpath.size() * 100. << " %)  dialogs have at least one mistake " << std::endl;
-  std::cout << "A total number of " << measures["tot_nb_mistakes"] << " mistakes have been done" << std::endl;
-  std::cout << "We made at least one mistake in " << measures["nb_turns_at_least_one_mistake"] << " / " << measures["tot_nb_turns"] << " turns, i.e. " << measures["nb_turns_at_least_one_mistake"] * 100. / measures["tot_nb_turns"] << " % (acc 1a = " << 1.0 - (double)measures["nb_turns_at_least_one_mistake"]  / measures["tot_nb_turns"] <<  ") " << std::endl;
-  std::cout << "There were a total of " << measures["tot_nb_turns"] << " turns" << std::endl;
-
-
-  // At the end, we record the dialogs on which a mistake was done
-  std::ofstream outfile;
-  outfile.open("mistaken_dialogs.data");
-  for(auto& kv: mistaken_dialogs)
-    outfile << kv.first << '\t' << kv.second << std::endl;
-  outfile.close();
-  std::cout << "Mistaken dialogs saved in mistaken_dialogs.data" << std::endl;
 
   // close the file in which the size of the belief is saved
   outfile_size.close();
