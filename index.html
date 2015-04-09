@@ -57,7 +57,7 @@
 
 <h2>Basic usage</h2>
 <p>
-Yarbus is a simple rule based belief tracker you can run on the dialogs from the DSTC2 and DSTC3. In the repository, Yarbus is provided as several scripts :
+Yarbus is a simple rule based belief tracker you can run on the dialogues from the DSTC2 and DSTC3. In the repository, Yarbus is provided as several scripts :
 <ul>
 <li>examples/yarbus is the tracker, producing the JSON tracker output for the joint goals, requested slots and methods</li>
 <li>examples/yarbus-with-labels is the tracker making use of the labels to compute some statistics on the fly</li>
@@ -92,13 +92,23 @@ In the paper, we varied the set of rules being used. This can be achieved with y
 </p>
 
 <p>
-As we saw in experiments, most of the score is achieved by activating only the inform and expl-conf rule so~:
+As we saw in experiments, most of the score is achieved by activating only the inform and expl-conf rules (i.e. rule number 24) and if, in addition you set the belief threshold to 0.01, so~:
 <pre><code>
 ./examples/yarbus-rule-set ~/DSTC/scripts/config/dstc2_test.flist ~/DSTC/scripts/config/ontology_dstc2.json 0.01 0 24
 </code></pre>
 </p>
 
+The generated tracker output can then be scored with the scoring functions of the challenges; something like :
+<pre><code>
+python score.py --dataset dstc2_test --dataroot ~/DSTC/data --ontology ~/DSTC/scripts/config/ontology_dstc2.json --trackfile dstc2_test-output.json --scorefile scores.csv 
+python report.py --scorefile scores.csv
+</pre></code>
+
+On the LIVE SLU, you should get, on the joint goals, something like (Acc : 0.7247394; L2 : 0.4413819; ROC : 0.0001424). On the SJTU+sys SLU, the performances are better (Acc : 0.7592115; L2 : 0.3618278; ROC : 0.3189233). Actually, you could even slightly increase the accuracy to 76.2 by blocking the negate rule in case the user is informing a slot for which the expl-conf is considered. But that is only 0.3 %, so let us keep it simple.
+
 <h2>A port in python</h2>
+
+In the repository, there is a python script baseline-yarbus.py which follows the same structure than the other baselines submitted to the challenges. However, be warned that the python script is much slower than the C++ code and it does not include the possibility to vary the rule set as well. In short, we advise you to use the C++ script.
 
 	<h1>Statistics</h1>
 <p>
