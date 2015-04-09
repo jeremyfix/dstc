@@ -55,7 +55,50 @@
 
 	<h1>Yarbus</h1>
 
-Yarbus is a simple rule based belief tracker you can run on the dialogs from the DSTC2 and DSTC3. In the repository, Yarbus 
+<h2>Basic usage</h2>
+<p>
+Yarbus is a simple rule based belief tracker you can run on the dialogs from the DSTC2 and DSTC3. In the repository, Yarbus is provided as several scripts :
+<ul>
+<li>examples/yarbus is the tracker, producing the JSON tracker output for the joint goals, requested slots and methods</li>
+<li>examples/yarbus-with-labels is the tracker making use of the labels to compute some statistics on the fly</li>
+<li>examples/yarbus-rule-set is the tracker and you can specify which rule set to use</li>
+<li>examples/yarbus-semantics is the tracker run over the semantics field of the labels, simulating a perfect SLU</li>
+</ul>
+</p>
+
+<p>
+Basically, to run the tracker with a threshold of the belief of 0.01 on DSTC2 :
+<pre><code>
+./examples/yarbus ~/DSTC/scripts/config/dstc2_test.flist ~/DSTC/scripts/config/ontology_dstc2.json 0.01 0
+</code></pre>
+If you want to see the output of the tracker on a specific dialog, say voip-28848c294, you simply call :
+<pre><code>
+./examples/yarbus ~/DSTC/scripts/config/dstc2_test.flist ~/DSTC/scripts/config/ontology_dstc2.json 0.01 1 voip-28848c294 
+</code></pre>
+The other scripts take more or less the same parameters, just run it, there is an help message.
+</p>
+
+<h2>Varying the rule set</h2>
+
+<p>
+In the paper, we varied the set of rules being used. This can be achieved with yarbus-rule-set. You need to specify a rule set defined as an integer that we convert as a binary code for selecting the rules. There are five rules, let us denote the rule set number as r0r1r2r3r4. The ri in {0, 1} indicates if we activate or not a rule with :
+<ul>
+<li>r0 : the inform rule</li>
+<li>r1 : the expl conf rule</li>
+<li>r2 : the impl-conf rule</li>
+<li>r3 : the deny rule</li>
+<li>r4 : the negate rule</li>
+</ul>
+</p>
+
+<p>
+As we saw in experiments, most of the score is achieved by activating only the inform and expl-conf rule so~:
+<pre><code>
+./examples/yarbus-rule-set ~/DSTC/scripts/config/dstc2_test.flist ~/DSTC/scripts/config/ontology_dstc2.json 0.01 0 24
+</code></pre>
+</p>
+
+<h2>A port in python</h2>
 
 	<h1>Statistics</h1>
 <p>
