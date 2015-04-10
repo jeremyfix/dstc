@@ -32,7 +32,7 @@ class YARBUS_Tracker(object):
     '''
     informable is a list of informable slots
     '''
-    def __init__(self, informable, thr_belief=1e-2):
+    def __init__(self, informable, thr_belief):
         self.informable = informable
         print("I parsed the following informable slots : " + str(informable))
         self.thr_belief = thr_belief
@@ -367,7 +367,39 @@ class YARBUS_Tracker(object):
             self.belief = [(g, score/sum_scores) for g,score in new_belief]
 
     def update_methods(self, macts, slu_hyps):
-        pass
+        transition = {"byalternatives" : 0.0, "byconstraints" : 0.0, "byname" : 0.0, "finished" : 0.0, "none":0.0}
+        for hyp in slu_hyps:
+            uacts = hyp['slu-hyp']
+            score = hyp['score']
+            has_reqalts = False
+            has_inform_not_name = False
+            has_inform_name = False
+            has_bye = False
+            for utt in uacts:
+                if(utt['act'] == 'reqalts') : has_reqalts = True
+                elif(utt['act'] == 'inform') : 
+                    for s,v in utt['slots']:
+                        if(s != 'name'): 
+                            has_inform_not_name = True
+                        else :
+                            has_inform_name = True
+                elif(utt['act'] == 'bye'):
+                    has_bye = True
+            n = int(has_reqalts) + int(has_inform_not_name) + int(has_inform_name) + int(has_bye)
+            # The mass of the hyp is split uniformely over the candidates
+            if(has_reqalts or has_inform_not_name or has_inform_name or has_bye):
+                transition["byalternatives"] += score * float(has_reqalts) / float(n)
+                transition["byconstraints"] += score * float(has_inform_not_name) / float(n)
+                transition["byname"] += score * float(has_inform_name) / float(n)
+                transition["finished"] += score * float(has_bye) / float(n)
+            else:
+                transition["none"] += score
+        # We can now update the methods recursively
+        for l in self.method_label.iterkeys():
+            if( l != "none"):
+                self.method_label[l] = transition["none"] * self.method_label[l] + transition[l]
+            else:
+                self.method_label[l] = transition["none"] * self.method_label[l]
 
     def update_requested_slots(self, macts, slu_hyps):
         # We first removed the informed slots
@@ -375,8 +407,31 @@ class YARBUS_Tracker(object):
             if(utt['act'] == "inform"):
                 for s,v in utt['slots']:
                     if s in self.requested_slots:
-                        self.requested_slots.remove(s)
+                        self.requested_slots.pop(s, None)
 
+        # We then marginalize the request(slot=s) acts from the user
+        request_scores = {}
+        for hyp in slu_hyps:
+            uacts = hyp['slu-hyp']
+            score = hyp['score']
+            slots_for_this_hyp = []
+            for utt in uacts:
+                if(utt['act'] == 'request'):
+                    for shctruk, s in utt['slots']:
+                        if not s in slots_for_this_hyp:
+                            if s in request_scores:
+                                request_scores[s] += score
+                            else:
+                                request_scores[s] = score
+                            slots_for_this_hyp.append(s)
+
+        # The probability P_t(s) of requesting the slot s can be computed recursively as
+        # P_t(s) = P_{t-1}(s) + (1 - P_{t-1}) P(request_t(s))
+        for s,score in request_scores.items():
+            if s in self.requested_slots:
+                self.requested_slots[s] += (1-self.requested_slots[s]) * score
+            else:
+                self.requested_slots[s] = score
 
     def addTurn(self, turn, verbose=False):
 
@@ -414,7 +469,7 @@ class YARBUS_Tracker(object):
         self.update_requested_slots(macts, slu_hyps)
 
         if(verbose):
-            self.print_belief()
+            self.print_me()
 
         self.prev_mact = macts
 
@@ -426,7 +481,7 @@ class YARBUS_Tracker(object):
                 goal_labels_joint.append({"slots": {k:v for k,v in g.iteritems() if v != "?"}, "score": score})
         # goal-labels-joint : joint_hyps = [{"slots":{}, "score" : 1.0}]
 
-        return {"goal-labels":{}, "goal-labels-joint":goal_labels_joint, "requested-slots": self.requested_slots, "method-label": self.method_label}
+        return {"goal-labels":{}, "goal-labels-joint":goal_labels_joint, "requested-slots": copy.copy(self.requested_slots), "method-label": copy.copy(self.method_label)}
 
     def reset(self):
         self.prev_mact = []
@@ -440,10 +495,12 @@ class YARBUS_Tracker(object):
             unknown_goal[s] = "?"
         self.belief.append( (unknown_goal, 1.0))
 
-    def print_belief(self):
+    def print_me(self):
         print("Belief : \n")
         for g, score in self.belief:
             print("(" + ",".join([s + "=" + v for s,v in g.iteritems()]) + ") : " + str(score))
+        print("Methods : " + str(self.method_label))
+        print("Requested slots : " + str(self.requested_slots))
 
 
 def print_gplv3() :
@@ -472,10 +529,12 @@ def main() :
                         help='Will look for corpus in <destroot>/<dataset>/...')
     parser.add_argument('--trackfile',dest='trackfile',action='store',required=True,metavar='JSON_FILE',
                         help='File to write with tracker output')
+    parser.add_argument('--thr_belief', dest='thr_belief', action='store', required=False, default=0.0,type=float)
     parser.add_argument('--session_id',dest='session_id',action='store',required=False,metavar='voip-...',
                         help='A particular session id to run on')
 
     args = parser.parse_args()
+
     
     dataset = dataset_walker.dataset_walker(args.dataset, dataroot=args.dataroot)
     session_id = None
@@ -490,7 +549,8 @@ def main() :
     track = {"sessions":[]}
     track["dataset"]  = args.dataset
     start_time = time.time()
-    tracker = YARBUS_Tracker(ontology["informable"].keys())
+    print("Yarbus will prune its belief with a threshold of %f ; to change this, check out the option --thr_belief" % args.thr_belief)
+    tracker = YARBUS_Tracker(ontology["informable"].keys(), args.thr_belief)
 
     nb_dialogs = len(dataset)
     print("%i dialogs to process" % nb_dialogs)
@@ -516,7 +576,7 @@ def main() :
     end_time = time.time()
     elapsed_time = end_time - start_time
     track["wall-time"] = elapsed_time
-   
+
     json.dump(track, track_file,indent=4)
 
 if __name__ == '__main__':
