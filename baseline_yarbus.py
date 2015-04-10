@@ -32,11 +32,24 @@ class YARBUS_Tracker(object):
     '''
     informable is a list of informable slots
     '''
-    def __init__(self, informable, thr_belief):
+    def __init__(self, informable, thr_belief, rule_set_number):
         self.informable = informable
         print("I parsed the following informable slots : " + str(informable))
+        print("Yarbus only extracts the slots from the ontology actually (and not the possible values)")
         self.thr_belief = thr_belief
+        print("I'm using the rule set number " + str(rule_set_number))
+        self.compute_rule_set(rule_set_number)
+        print("It corresponds to the use of the following rule : ")
+        for rname, use_rule in self.rule_set.iteritems():
+            print("%s rule : %i " % (rname, use_rule))
         self.reset()
+
+    def compute_rule_set(self, rule_set_number):
+        self.rule_set = {}
+        rule_names = ["deny", "negate", "implconf", "explconf", "inform"]
+        for n in rule_names:
+            self.rule_set[n] = (rule_set_number % 2)
+            rule_set_number /= 2
 
     def renormalize_slu(self, slu_hyps):
         score = 0.0
@@ -134,64 +147,67 @@ class YARBUS_Tracker(object):
                 raw_hyps.append(new_utterance)
         return new_slu
 
-
-
     def get_posmus(self, machine_utt, user_utt, slot):
         pos = set()
         # Rule 1
-        for utt in user_utt:
-            if(utt['act'] == "inform"):
-                for s,v in utt['slots']:
-                    if(slot == s):
-                        pos.add(v)
-        # Rule 2
-        has_affirm = False
-        for utt in user_utt:
-            has_affirm = (utt['act'] == "affirm")
-            if(has_affirm):
-                break
-        if(has_affirm):
-            for utt in machine_utt:
-                if(utt['act'] == "expl-conf"):
+        if(self.rule_set["inform"]):
+            for utt in user_utt:
+                if(utt['act'] == "inform"):
                     for s,v in utt['slots']:
                         if(slot == s):
                             pos.add(v)
+        # Rule 2
+        if(self.rule_set["explconf"]):
+            has_affirm = False
+            for utt in user_utt:
+                has_affirm = (utt['act'] == "affirm")
+                if(has_affirm):
+                    break
+            if(has_affirm):
+                for utt in machine_utt:
+                    if(utt['act'] == "expl-conf"):
+                        for s,v in utt['slots']:
+                            if(slot == s):
+                                pos.add(v)
         # Rule 3
-        has_negate = False
-        for utt in user_utt:
-            has_negate = (utt['act'] == "negate")
-            if(has_negate):
-                break
-        if((not has_negate) and (len(user_utt) != 0)):
-            for utt in machine_utt:
-                if(utt['act'] == "impl-conf"):
-                    for s,v in utt['slots']:
-                        if(slot == s):
-                            pos.add(v)   
+        if(self.rule_set["implconf"]):
+            has_negate = False
+            for utt in user_utt:
+                has_negate = (utt['act'] == "negate")
+                if(has_negate):
+                    break
+            if((not has_negate) and (len(user_utt) != 0)):
+                for utt in machine_utt:
+                    if(utt['act'] == "impl-conf"):
+                        for s,v in utt['slots']:
+                            if(slot == s):
+                                pos.add(v)   
         return pos
 
     def get_negmus(self, machine_utt, user_utt, slot):
         neg = set()
 
         # Rule 4 : deny rule
-        for utt in user_utt:
-            if(utt['act'] == "deny"):
-                for s,v in utt['slots']:
-                    if(slot == s):
-                        neg.add("!" + v)
-
-        # Rule 5 : negate rule
-        has_negate = False
-        for utt in user_utt:
-            has_negate = (utt['act'] == "negate")
-            if(has_negate):
-                break
-        if(has_negate):
-            for utt in machine_utt:
-                if(utt['act'] == "expl-conf"):
+        if(self.rule_set["deny"]):
+            for utt in user_utt:
+                if(utt['act'] == "deny"):
                     for s,v in utt['slots']:
                         if(slot == s):
-                            neg.add("!" + v)   
+                            neg.add("!" + v)
+
+        # Rule 5 : negate rule
+        if(self.rule_set["negate"]):
+            has_negate = False
+            for utt in user_utt:
+                has_negate = (utt['act'] == "negate")
+                if(has_negate):
+                    break
+            if(has_negate):
+                for utt in machine_utt:
+                    if(utt['act'] == "expl-conf"):
+                        for s,v in utt['slots']:
+                            if(slot == s):
+                                neg.add("!" + v)   
 
         return neg
 
@@ -529,7 +545,10 @@ def main() :
                         help='Will look for corpus in <destroot>/<dataset>/...')
     parser.add_argument('--trackfile',dest='trackfile',action='store',required=True,metavar='JSON_FILE',
                         help='File to write with tracker output')
-    parser.add_argument('--thr_belief', dest='thr_belief', action='store', required=False, default=0.0,type=float)
+    parser.add_argument('--thr_belief', dest='thr_belief', action='store', required=False, default=0.0,type=float,
+                        help='Sets the threshold below which the hypothesis in the belief are removed')
+    parser.add_argument('--rule_set', dest='rule_set', action='store', required=False, default=31, type=int,
+                        help='Specifies which rule set to use, an int in [0, 31]')
     parser.add_argument('--session_id',dest='session_id',action='store',required=False,metavar='voip-...',
                         help='A particular session id to run on')
 
@@ -550,7 +569,7 @@ def main() :
     track["dataset"]  = args.dataset
     start_time = time.time()
     print("Yarbus will prune its belief with a threshold of %f ; to change this, check out the option --thr_belief" % args.thr_belief)
-    tracker = YARBUS_Tracker(ontology["informable"].keys(), args.thr_belief)
+    tracker = YARBUS_Tracker(ontology["informable"].keys(), args.thr_belief, args.rule_set)
 
     nb_dialogs = len(dataset)
     print("%i dialogs to process" % nb_dialogs)
