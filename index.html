@@ -108,7 +108,11 @@ On the LIVE SLU, you should get, on the joint goals, something like (Acc : 0.724
 
 <h2>A port in python</h2>
 
-In the repository, there is a python script baseline-yarbus.py which follows the same structure than the other baselines submitted to the challenges. However, be warned that the python script is much slower than the C++ code and it does not include the possibility to vary the rule set as well. In short, we advise you to use the C++ script.
+In the repository, there is a python script baseline-yarbus.py which follows the same structure than the other baselines submitted to the challenges. However, be warned that the python script can much slower than the C++ code (because of some inefficient data structures and this slowness is especially true on SLU with a lot of hypothesis). In short, we advise you to use the C++ script. Anyway, as in the C++ script you can specifiy the rule set and the threshold to be used for prunning the belief. For example, prunning at 0.01 and using the expl-conf and inform rule, you would call something like (this call might vary depending on the paths of the data):
+<pre><code>
+python baseline_yarbus.py --rule_set 24 --thr_belief 0.01 --dataset dstc2_test --dataroot ../data --ontology config/ontology_dstc2.json --trackfile yarbus.json 
+</pre></code>
+On the SJTU+sys SLU, you should get (Acc:0.7579730, L2:0.3678179, ROC:0.3206699). On the LIVE SLU, the performances are actually (Acc:0.7231912, L2:0.4457830,ROC:0.0001427).
 
 	<h1>Statistics</h1>
 <p>
