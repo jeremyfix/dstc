@@ -193,13 +193,6 @@ class YARBUS_Tracker(object):
                         if(slot == s):
                             neg.add("!" + v)   
 
-        
-        # for utt in user_utt:
-        #     if(utt['act'] == "deny"):
-        #         for s,v in utt['slots']:
-        #             if(slot == s):
-        #                 neg.add("!" + v)
-
         return neg
 
     '''
@@ -373,11 +366,16 @@ class YARBUS_Tracker(object):
                     new_belief.append((g, score))
             self.belief = [(g, score/sum_scores) for g,score in new_belief]
 
-    def update_methods(self):
+    def update_methods(self, macts, slu_hyps):
         pass
 
-    def update_requested_slots(self):
-        pass
+    def update_requested_slots(self, macts, slu_hyps):
+        # We first removed the informed slots
+        for utt in macts:
+            if(utt['act'] == "inform"):
+                for s,v in utt['slots']:
+                    if s in self.requested_slots:
+                        self.requested_slots.remove(s)
 
 
     def addTurn(self, turn, verbose=False):
@@ -410,8 +408,10 @@ class YARBUS_Tracker(object):
                 print(i)
 
         self.update_goals(infos)
-
         self.clean_belief(self.thr_belief)
+
+        self.update_methods(macts, slu_hyps)
+        self.update_requested_slots(macts, slu_hyps)
 
         if(verbose):
             self.print_belief()
