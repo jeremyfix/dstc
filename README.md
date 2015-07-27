@@ -5,7 +5,7 @@ In this repository , you will find various tools in C++:
 
 - a tool for computing statistics on the dialog acts in the Dialog State Tracking challenge datasets (dstc2, dstc3)
 - a tool for viewing the data as well as tracker outputs (synchronized to the viewer of the dialog/label files)
-- the scripts for running the Yarbus tracker : check out [the dedicated page](http://jeremyfix.github.io/dstc/)
+- the scripts for running the Yarbus tracker : check out [the dedicated page](http://jeremyfix.github.io/dstc/); The associated paper presenting the tracker is available on [arxiv](http://arxiv.org/abs/1507.06837)
 
 It aims at providing an easy way to play with the JSON data under the format of [Dialog State Tracking Challenge](http://camdial.org/~mh521/dstc/). It has developped while working in the [ANR MaRDi project](http://mardi.metz.supelec.fr)
 
