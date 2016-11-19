@@ -30,6 +30,7 @@
 #include <list>
 #include <json/json.h>
 #include <iomanip>
+#include <iostream>
 #include "constants.h"
 
 #define BELIEF_TRACKER_TABULAR_JSON 4
